@@ -1,27 +1,50 @@
 import Action from './';
 
 class Parallel extends Action {
-  onStart() {
-    const { actions } = this.props;
-    this.numActiveActions = actions.length;
-
-    actions.forEach((action) => {
-      action.setProps({
-        _onStop: () => this.numActiveActions--
-      }).start();
-    });
-  }
-
-  onStop() {
-    this.props.actions.forEach((action) => action.stop());
+  constructor() {
+    const { actions, ...remainingProps } = props;
+    super(remainingProps);
+    this.current = [];
+    this.addActions(actions);
   }
 
   addAction(action) {
     const { actions } = this.props;
 
-    if (actions.indexOf(action) === -1) {
-      actions.push(action);
-    }
+    if (actions.indexOf(action) !== -1) return;
+
+    actions.push(action);
+
+    const i = actions.length - 1;
+    const onUpdate = (v) => this.current[i] = v;
+
+    onUpdate(action.get());
+
+    action
+      .setProps({
+        _onStop: () => this.numActiveActions--
+      })
+      .addListener(onUpdate);
+  }
+
+  addActions(actions) {
+    actions.forEach((action) => this.addAction(action));
+  }
+
+  onStart() {
+    const { actions } = this.props;
+    this.numActiveActions = actions.length;
+    actions.forEach((action) => action.start());
+  }
+
+  onStop() {
+    const { actions } = this.props;
+    actions.forEach((action) => action.stop());
+  }
+
+  getVelocity() {
+    const { actions } = this.props;
+    return actions.map((action) => action.getVelocity());
   }
 
   isActionComplete() {
