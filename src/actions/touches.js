@@ -1,3 +1,4 @@
+import value from './value';
 import composite from './composite';
 import parallel from './parallel';
 
@@ -22,29 +23,30 @@ function createTouches(initialTouches, { eventToTouches, moveEvent, ...props }) 
   return touches;
 }
 
-function mapCoordsToActions(coords) { 
+function mapCoordsToActions(coords) {
   let actions = [];
-  for (var i = 0; i < coords.length; i++) {
+  for (let i = 0; i < coords.length; i++) {
     const { x, y } = coords[i];
     actions[i] = composite({
       x: value(x),
       y: value(y)
     });
   }
-  return composite(actions);
+  return actions;
 }
 
-function updateActionWithTouches(action, newTouches) {
-  for (const i in newTouches) {
+function updateActionWithTouches(touches, newTouches) {
+  for (let i = 0; i < newTouches.length; i++) {
     const { x, y } = newTouches[i];
-    if (action[i] !== null) {
-      action[i].x.set(x);
-      action[i].y.set(y);
+    const touchAction = touches.getAction(i);
+    if (touchAction !== undefined) {
+      touchAction.x.set(x);
+      touchAction.y.set(y);
     } else {
-      action[i] = composite({
+      touches.addAction(composite({
         x: value(x),
         y: value(y)
-      });
+      }));
     }
   }
 }
@@ -52,7 +54,7 @@ function updateActionWithTouches(action, newTouches) {
 const mouseEventToTouches = ({ pageX, pageY }) => [{ x: pageX, y: pageY }];
 const touchEventToTouches = ({ touches }) => extractCoords(touches);
 
-function extractCoords(touches) { 
+function extractCoords(touches) {
   let coords = [];
   for (var i = 0; i < touches.length; i++) {
     const { clientX, clientY } = touches[i];
